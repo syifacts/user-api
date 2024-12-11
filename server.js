@@ -28,18 +28,14 @@ const init = async () => {
 
         if (response.isBoom) {
         response.output.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin yang lebih spesifik jika diperlukan
-        response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'; 
+        response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'; 
         response.output.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
         } else {
 
         // Menambahkan CORS untuk semua response
         response.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin yang lebih spesifik jika diperlukan
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'; 
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'; 
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
-        }
-        // Menangani preflight request (OPTIONS)
-        if (request.method === 'options') {
-            return h.response().code(200); // Kode status 200 untuk OPTIONS
         }
 
         return h.continue;
