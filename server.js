@@ -1,12 +1,12 @@
 const Hapi = require('@hapi/hapi');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { registerRoute, loginRoute } = require('./routes/routes'); // Mengimpor route dengan benar
+const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute } = require('./routes/routes'); // Mengimpor route dengan benar
 
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URL, {
+        await mongoose.connect(process.env.MONGODB_URI, {
         });
         console.log('Connected to MongoDB');
     } catch (err) {
@@ -26,11 +26,7 @@ const init = async () => {
     server.ext('onPreResponse', (request, h) => {
         const response = request.response;
 
-         // Pastikan response ada dan valid
-    if (response.isBoom) {
-        // Jika response adalah error (Boom), tidak menambah CORS headers
-        return h.continue;
-    }
+        
 
         // Menambahkan CORS untuk semua response
         response.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin yang lebih spesifik jika diperlukan
@@ -48,6 +44,8 @@ const init = async () => {
     // Register route-routes yang diimpor
     server.route(registerRoute);
     server.route(loginRoute);
+    server.route(getLoginRoute);
+    server.route(getRegisterRoute);
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
