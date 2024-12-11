@@ -1,12 +1,14 @@
 const Hapi = require('@hapi/hapi');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute } = require('./routes/routes'); // Mengimpor route dengan benar
+const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute } = require('./routes/routes');
 
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URL, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
         });
         console.log('Connected to MongoDB');
     } catch (err) {
@@ -22,30 +24,46 @@ const init = async () => {
         host: '0.0.0.0',
     });
 
-    // Register CORS middleware
+    // Menambahkan middleware CORS secara manual
     server.ext('onPreResponse', (request, h) => {
         const response = request.response;
 
+        // Jika response adalah error
         if (response.isBoom) {
-        response.output.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin yang lebih spesifik jika diperlukan
-        response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'; 
-        response.output.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
+            response.output.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin spesifik jika di produksi
+            response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+            response.output.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
         } else {
-
-        // Menambahkan CORS untuk semua response
-        response.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin yang lebih spesifik jika diperlukan
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'; 
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
+            // Jika response bukan error
+            response.headers = {
+                ...response.headers,
+                'Access-Control-Allow-Origin': '*', // Ganti dengan origin spesifik jika di produksi
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            };
         }
 
         return h.continue;
     });
 
+    // Menangani preflight request untuk metode OPTIONS
+    server.route({
+        method: 'OPTIONS',
+        path: '/{any*}', // Mengizinkan semua route
+        handler: (request, h) => {
+            return h
+                .response('Preflight Request Handled')
+                .header('Access-Control-Allow-Origin', '*')
+                .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                .header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        },
+    });
+
     // Register route-routes yang diimpor
     server.route(registerRoute);
     server.route(loginRoute);
-    server.route(getLoginRoute);
     server.route(getRegisterRoute);
+    server.route(getLoginRoute);
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
