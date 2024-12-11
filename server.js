@@ -6,7 +6,7 @@ const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute } = require('
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI, {
+        await mongoose.connect(process.env.MONGODB_URL, {
         });
         console.log('Connected to MongoDB');
     } catch (err) {
