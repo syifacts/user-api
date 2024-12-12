@@ -43,17 +43,55 @@ const loginRoute = {
         return h.response({ message: 'Invalid credentials' }).code(400);
       }
 
-      const token = jwt.sign(
+      // Membuat access token dengan expired time 1 jam
+      const accessToken = jwt.sign(
         { userId: user._id },
-        process.env.JWT_SECRET || 'secret',
-        { expiresIn: '1h' }
+        process.env.JWT_SECRET || 'yourSecretKeyHere',
+        { expiresIn: '1h' } // Token ini kedaluwarsa dalam 1 jam
       );
-      return h.response({ token, username: user.username }).code(200);
+
+      // Membuat refresh token tanpa expired time
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET || 'yourSecretKeyHere'
+      );
+
+      return h.response({ accessToken, refreshToken, username: user.username }).code(200);
     } catch (err) {
       return h.response({ message: 'Error logging in' }).code(500);
     }
   },
 };
+
+// Endpoint untuk mendapatkan access token baru menggunakan refresh token
+const refreshRoute = {
+  method: 'POST',
+  path: '/refresh-token',
+  handler: async (request, h) => {
+    const { refreshToken } = request.payload;
+
+    if (!refreshToken) {
+      return h.response({ message: 'Refresh token is required' }).code(400);
+    }
+
+    try {
+      // Verifikasi refresh token
+      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || 'yourSecretKeyHere');
+      
+      // Membuat access token baru dengan userId dari refresh token
+      const newAccessToken = jwt.sign(
+        { userId: decoded.userId },
+        process.env.JWT_SECRET || 'yourSecretKeyHere',
+        { expiresIn: '1h' } // Set expired time sesuai kebutuhan
+      );
+      
+      return h.response({ accessToken: newAccessToken }).code(200);
+    } catch (err) {
+      return h.response({ message: 'Invalid refresh token' }).code(400);
+    }
+  },
+};
+
 
 // Endpoint GET untuk Register
 const getRegisterRoute = {
@@ -73,4 +111,4 @@ const getLoginRoute = {
   },
 };
 
-module.exports = { registerRoute, loginRoute, getRegisterRoute, getLoginRoute };
+module.exports = { registerRoute, loginRoute, refreshRoute, getRegisterRoute, getLoginRoute };
