@@ -72,6 +72,7 @@ const loginRoute = {
           accessToken,
           refreshToken,
           username: user.username,
+          userId: user._id,
         })
         .code(200);
     } catch (err) {
