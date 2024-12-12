@@ -43,25 +43,31 @@ const loginRoute = {
         return h.response({ message: 'Invalid credentials' }).code(400);
       }
 
-      // Membuat access token dengan expired time 1 jam
+      // Membuat access token
       const accessToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET || 'yourSecretKeyHere',
-        { expiresIn: '1h' } // Token ini kedaluwarsa dalam 1 jam
+        { expiresIn: '1h' }
       );
 
-      // Membuat refresh token tanpa expired time
+      // Membuat refresh token
       const refreshToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET || 'yourSecretKeyHere'
       );
 
-      return h.response({ accessToken, refreshToken, username: user.username }).code(200);
+      return h.response({
+        accessToken,
+        refreshToken,
+        username: user.username,
+      }).code(200);
     } catch (err) {
+      console.error('Error during login:', err);
       return h.response({ message: 'Error logging in' }).code(500);
     }
   },
 };
+
 
 // Endpoint untuk mendapatkan access token baru menggunakan refresh token
 const refreshRoute = {
