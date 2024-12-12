@@ -28,20 +28,10 @@ const init = async () => {
     server.ext('onPreResponse', (request, h) => {
         const response = request.response;
 
-        // Jika response adalah error
-        if (response.isBoom) {
-            response.output.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin spesifik jika di produksi
-            response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-            response.output.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
-        } else {
-            // Jika response bukan error
-            response.headers = {
-                ...response.headers,
-                'Access-Control-Allow-Origin': '*', // Ganti dengan origin spesifik jika di produksi
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-            };
-        }
+        // Menambahkan CORS ke setiap respons, jika response error atau tidak
+        response.output.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin spesifik jika di produksi
+        response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        response.output.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
 
         return h.continue;
     });
@@ -66,14 +56,15 @@ const init = async () => {
     server.route(getRegisterRoute);
     server.route(getLoginRoute);
 
+    // Memulai server
     await server.start();
     console.log('Server running on %s', server.info.uri);
 };
 
 // Menghubungkan ke MongoDB dan memulai server
-startMongoDB().then(() => {
-    init().catch(err => {
+startMongoDB()
+    .then(() => init())
+    .catch((err) => {
         console.error('Server initialization error:', err);
         process.exit(1);
     });
-});
