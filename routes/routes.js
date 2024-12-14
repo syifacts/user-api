@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user"); // Mengimpor model User dari file models
-const verifyToken = require("../middleware/auth"); // Import middleware untuk verifikasi token jika diperlukan
 
 // Endpoint Register
 const registerRoute = {
@@ -10,17 +9,19 @@ const registerRoute = {
   handler: async (request, h) => {
     const { name, username, password } = request.payload;
     try {
+      // Mengecek apakah username sudah ada
       const userExists = await User.findOne({ username });
       if (userExists) {
         return h.response({ message: "Username already exists" }).code(400);
       }
 
+      // Enkripsi password
       const hashedPassword = await bcrypt.hash(password, 10);
       const newUser = new User({ name, username, password: hashedPassword });
 
       await newUser.save();
 
-      // Membuat token setelah registrasi
+      // Membuat access token setelah registrasi
       const accessToken = jwt.sign(
         { userId: newUser._id }, // Payload
         process.env.JWT_SECRET || "yourSecretKeyHere",
@@ -49,6 +50,7 @@ const loginRoute = {
         return h.response({ message: "Invalid credentials" }).code(400);
       }
 
+      // Memeriksa apakah password cocok
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return h.response({ message: "Invalid credentials" }).code(400);
@@ -66,6 +68,10 @@ const loginRoute = {
         { userId: user._id },
         process.env.JWT_SECRET || "yourSecretKeyHere"
       );
+
+      // Simpan refresh token ke database
+      user.refreshToken = refreshToken;
+      await user.save(); // Simpan perubahan pada database
 
       return h
         .response({
@@ -99,6 +105,12 @@ const refreshRoute = {
         refreshToken,
         process.env.JWT_SECRET || "yourSecretKeyHere"
       );
+
+      // Temukan user berdasarkan userId dari refresh token
+      const user = await User.findById(decoded.userId);
+      if (!user || user.refreshToken !== refreshToken) {
+        return h.response({ message: "Invalid refresh token" }).code(400);
+      }
 
       // Membuat access token baru dengan userId dari refresh token
       const newAccessToken = jwt.sign(
