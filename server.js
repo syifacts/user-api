@@ -1,7 +1,7 @@
 const Hapi = require('@hapi/hapi');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute, verifyTokenRoute, getRefreshRoute } = require('./routes/routes');
+const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute, verifyTokenRoute,getRefreshRoute } = require('./routes/routes');
 
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
@@ -65,27 +65,6 @@ const init = async () => {
     server.route(getRefreshRoute);
     server.route(verifyTokenRoute);
 
-    // Menangani error jika route tidak ditemukan
-    server.ext('onPreResponse', (request, h) => {
-        const response = request.response;
-
-        if (response.isBoom) {
-            const statusCode = response.output.statusCode;
-            const errorMessage = response.output.payload.message || 'Internal Server Error';
-            const errorDetails = response.details || null;
-
-            // Mengirimkan response error standar
-            return h.response({
-                statusCode,
-                message: errorMessage,
-                details: errorDetails,
-            }).code(statusCode);
-        }
-        
-        return h.continue;
-    });
-
-    // Menjalankan server
     await server.start();
     console.log('Server running on %s', server.info.uri);
 };
