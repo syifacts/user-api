@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user"); // Mengimpor model User dari file models
-const verifyToken = require("../middleware/auth"); // Import middleware untuk verifikasi token jika diperlukan
 
 // Endpoint Register
 const registerRoute = {
@@ -100,11 +99,11 @@ const refreshRoute = {
         process.env.JWT_SECRET || "yourSecretKeyHere"
       );
 
-      // Membuat access token baru dengan userId dari refresh token
+      // Membuat access token baru
       const newAccessToken = jwt.sign(
         { userId: decoded.userId },
         process.env.JWT_SECRET || "yourSecretKeyHere",
-        { expiresIn: "1h" } // Set expired time sesuai kebutuhan
+        { expiresIn: "1h" }
       );
 
       return h.response({ accessToken: newAccessToken }).code(200);
@@ -114,7 +113,7 @@ const refreshRoute = {
   },
 };
 
-// Endpoint untuk memverifikasi token (verifikasi token sebelum mengakses data pengguna)
+// Endpoint untuk memverifikasi token
 const verifyTokenRoute = {
   method: "POST",
   path: "/verify-token",
@@ -129,6 +128,40 @@ const verifyTokenRoute = {
       return h.response({ message: "Token is valid", userId: decoded.userId }).code(200);
     } catch (err) {
       return h.response({ message: "Invalid token" }).code(400);
+    }
+  },
+};
+
+// Endpoint GET untuk semua pengguna
+const getAllUsersRoute = {
+  method: "GET",
+  path: "/users",
+  handler: async (request, h) => {
+    try {
+      const users = await User.find({}, "-password"); // Exclude password field
+      return h.response({ users }).code(200);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      return h.response({ message: "Error fetching users" }).code(500);
+    }
+  },
+};
+
+// Endpoint GET user berdasarkan ID
+const getUserByIdRoute = {
+  method: "GET",
+  path: "/users/{id}",
+  handler: async (request, h) => {
+    const { id } = request.params;
+    try {
+      const user = await User.findById(id, "-password"); // Exclude password field
+      if (!user) {
+        return h.response({ message: "User not found" }).code(404);
+      }
+      return h.response({ user }).code(200);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      return h.response({ message: "Error fetching user" }).code(500);
     }
   },
 };
@@ -166,12 +199,15 @@ const getRefreshRoute = {
   },
 };
 
+// Export semua routes
 module.exports = {
   registerRoute,
   loginRoute,
   refreshRoute,
-  verifyTokenRoute,  // Menambahkan route untuk verifikasi token
+  verifyTokenRoute,
+  getAllUsersRoute,   // Endpoint untuk semua user
+  getUserByIdRoute,   // Endpoint untuk user berdasarkan ID
   getRegisterRoute,
   getLoginRoute,
-  getRefreshRoute,   // Menambahkan route untuk GET refresh token
+  getRefreshRoute,
 };

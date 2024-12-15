@@ -1,7 +1,16 @@
 const Hapi = require('@hapi/hapi');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute, verifyTokenRoute,getRefreshRoute } = require('./routes/routes');
+const { 
+  registerRoute, 
+  loginRoute, 
+  getRegisterRoute, 
+  getLoginRoute, 
+  verifyTokenRoute, 
+  getRefreshRoute,
+  getAllUsersRoute, // Menambahkan route untuk semua pengguna
+  getUserByIdRoute,  // Menambahkan route untuk mendapatkan pengguna berdasarkan ID
+} = require('./routes/routes');
 
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
@@ -64,6 +73,8 @@ const init = async () => {
     server.route(getLoginRoute);
     server.route(getRefreshRoute);
     server.route(verifyTokenRoute);
+    server.route(getAllUsersRoute);  // Menambahkan route untuk semua pengguna
+    server.route(getUserByIdRoute);  // Menambahkan route untuk pengguna berdasarkan ID
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
