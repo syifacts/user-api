@@ -138,6 +138,7 @@ const updateUserRoute = {
   method: "PUT",
   path: "/update-user",
   handler: async (request, h) => {
+    console.log("Update user route hit"); 
     const { password, newUsername, newPassword } = request.payload;
     const token = request.headers.authorization?.split(' ')[1]; // Ambil token dari header Authorization
 
