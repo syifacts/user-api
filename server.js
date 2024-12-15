@@ -1,13 +1,12 @@
 const Hapi = require('@hapi/hapi');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute, verifyTokenRoute,getRefreshRoute } = require('./routes/routes');
+const { registerRoute, loginRoute, getRegisterRoute, getLoginRoute, verifyTokenRoute, getRefreshRoute, updateUserRoute } = require('./routes/routes');
 
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URL, {
-        });
+        await mongoose.connect(process.env.MONGODB_URL, {});
         console.log('Connected to MongoDB');
     } catch (err) {
         console.error('MongoDB connection error:', err);
@@ -25,29 +24,25 @@ const init = async () => {
     // Menambahkan middleware CORS secara manual
     server.ext('onPreResponse', (request, h) => {
         const response = request.response;
-
-        // Jika response adalah error
         if (response.isBoom) {
-            response.output.headers['Access-Control-Allow-Origin'] = '*'; // Ganti dengan origin spesifik jika di produksi
+            response.output.headers['Access-Control-Allow-Origin'] = '*'; 
             response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
             response.output.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
         } else {
-            // Jika response bukan error
             response.headers = {
                 ...response.headers,
-                'Access-Control-Allow-Origin': '*', // Ganti dengan origin spesifik jika di produksi
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
             };
         }
-
         return h.continue;
     });
 
     // Menangani preflight request untuk metode OPTIONS
     server.route({
         method: 'OPTIONS',
-        path: '/{any*}', // Mengizinkan semua route
+        path: '/{any*}', 
         handler: (request, h) => {
             return h
                 .response('Preflight Request Handled')
@@ -64,6 +59,7 @@ const init = async () => {
     server.route(getLoginRoute);
     server.route(getRefreshRoute);
     server.route(verifyTokenRoute);
+    server.route(updateUserRoute); // Menambahkan route update user
 
     await server.start();
     console.log('Server running on %s', server.info.uri);

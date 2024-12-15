@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user"); // Mengimpor model User dari file models
-const verifyToken = require("../middleware/auth"); // Import middleware untuk verifikasi token jika diperlukan
+const verifyToken = require("../middleware/auth"); // Import middleware untuk verifikasi token
 
 // Endpoint Register
 const registerRoute = {
@@ -133,6 +133,56 @@ const verifyTokenRoute = {
   },
 };
 
+// Endpoint untuk mengubah username dan password
+const updateUserRoute = {
+  method: "PUT",
+  path: "/update-user",
+  handler: async (request, h) => {
+    const { password, newUsername, newPassword } = request.payload;
+    const token = request.headers.authorization?.split(' ')[1]; // Ambil token dari header Authorization
+
+    if (!token) {
+      return h.response({ message: "Authorization token is required" }).code(400);
+    }
+
+    try {
+      // Verifikasi token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "yourSecretKeyHere");
+      const userId = decoded.userId;
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return h.response({ message: "User not found" }).code(404);
+      }
+
+      // Verifikasi apakah password yang dimasukkan benar
+      if (password && !(await bcrypt.compare(password, user.password))) {
+        return h.response({ message: "Current password is incorrect" }).code(400);
+      }
+
+      // Perbarui username jika ada newUsername
+      if (newUsername) {
+        user.username = newUsername;
+      }
+
+      // Perbarui password jika ada newPassword
+      if (newPassword) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+      }
+
+      // Simpan perubahan ke database
+      await user.save();
+
+      return h.response({ message: "User updated successfully" }).code(200);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      return h.response({ message: "Error updating user" }).code(500);
+    }
+  },
+};
+
 // Endpoint GET untuk Register
 const getRegisterRoute = {
   method: "GET",
@@ -171,6 +221,7 @@ module.exports = {
   loginRoute,
   refreshRoute,
   verifyTokenRoute,  // Menambahkan route untuk verifikasi token
+  updateUserRoute,   // Menambahkan route untuk update username dan password
   getRegisterRoute,
   getLoginRoute,
   getRefreshRoute,   // Menambahkan route untuk GET refresh token
