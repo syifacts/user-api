@@ -12,6 +12,7 @@ const {
   getUserByIdRoute,  // Menambahkan route untuk mendapatkan pengguna berdasarkan ID
   refreshRoute,
   changePasswordRoute,
+  updateUserRoute,
 } = require('./routes/routes');
 
 
@@ -81,6 +82,7 @@ const init = async () => {
     server.route(getUserByIdRoute);  // Menambahkan route untuk pengguna berdasarkan ID
     server.route(refreshRoute);
     server.route(changePasswordRoute);
+    server.route(updateUserRoute);
 
     await server.start();
     console.log('Server running on %s', server.info.uri);

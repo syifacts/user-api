@@ -243,6 +243,53 @@ const changePasswordRoute = {
     }
   },
 };
+// Endpoint PUT untuk mengubah username dan name
+const updateUserRoute = {
+  method: "PUT",
+  path: "/update-user",
+  handler: async (request, h) => {
+    const { username, name } = request.payload;
+    const { authorization } = request.headers;
+
+    if (!authorization) {
+      return h.response({ message: "Authorization header is required" }).code(400);
+    }
+
+    try {
+      // Mendekode token dari header Authorization
+      const token = authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "yourSecretKeyHere");
+
+      // Mencari user berdasarkan ID
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return h.response({ message: "User not found" }).code(404);
+      }
+
+      // Memeriksa jika username sudah ada
+      if (username) {
+        const usernameExists = await User.findOne({ username });
+        if (usernameExists && usernameExists._id.toString() !== user._id.toString()) {
+          return h.response({ message: "Username already exists" }).code(400);
+        }
+        user.username = username;
+      }
+
+      // Memperbarui nama jika ada
+      if (name) {
+        user.name = name;
+      }
+
+      // Menyimpan perubahan
+      await user.save();
+
+      return h.response({ message: "User updated successfully" }).code(200);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      return h.response({ message: "Error updating user" }).code(500);
+    }
+  },
+};
 
 
 // Export semua routes
@@ -257,4 +304,5 @@ module.exports = {
   getLoginRoute,
   getRefreshRoute,
   changePasswordRoute,
+  updateUserRoute,
 };
