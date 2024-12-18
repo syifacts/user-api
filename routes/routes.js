@@ -21,7 +21,7 @@ const registerRoute = {
 
       // Membuat token setelah registrasi
       const accessToken = jwt.sign(
-        { userId: newUser._id },
+        { userId: newUser._id }, // Payload
         process.env.JWT_SECRET || "yourSecretKeyHere",
         { expiresIn: "1h" }
       );
@@ -53,24 +53,27 @@ const loginRoute = {
         return h.response({ message: "Invalid credentials" }).code(400);
       }
 
-      // Membuat access token dan refresh token
+      // Membuat access token
       const accessToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET || "yourSecretKeyHere",
         { expiresIn: "1h" }
       );
+
+      // Membuat refresh token
       const refreshToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET || "yourSecretKeyHere"
       );
 
+      // Mengembalikan nama pengguna, username, userId, dan token
       return h
         .response({
           accessToken,
           refreshToken,
           username: user.username,
+          name: user.name,  // Menambahkan 'name' dalam respons
           userId: user._id,
-          name: user.name, // Menambahkan nama ke respons
         })
         .code(200);
     } catch (err) {
@@ -92,11 +95,13 @@ const refreshRoute = {
     }
 
     try {
+      // Verifikasi refresh token
       const decoded = jwt.verify(
         refreshToken,
         process.env.JWT_SECRET || "yourSecretKeyHere"
       );
 
+      // Membuat access token baru
       const newAccessToken = jwt.sign(
         { userId: decoded.userId },
         process.env.JWT_SECRET || "yourSecretKeyHere",
@@ -122,9 +127,7 @@ const verifyTokenRoute = {
         token,
         process.env.JWT_SECRET || "yourSecretKeyHere"
       );
-      return h
-        .response({ message: "Token is valid", userId: decoded.userId })
-        .code(200);
+      return h.response({ message: "Token is valid", userId: decoded.userId }).code(200);
     } catch (err) {
       return h.response({ message: "Invalid token" }).code(400);
     }
@@ -137,7 +140,7 @@ const getAllUsersRoute = {
   path: "/users",
   handler: async (request, h) => {
     try {
-      const users = await User.find({}, "-password");
+      const users = await User.find({}, "-password"); // Exclude password field
       return h.response({ users }).code(200);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -153,7 +156,7 @@ const getUserByIdRoute = {
   handler: async (request, h) => {
     const { id } = request.params;
     try {
-      const user = await User.findById(id, "-password");
+      const user = await User.findById(id, "-password"); // Exclude password field
       if (!user) {
         return h.response({ message: "User not found" }).code(404);
       }
@@ -165,44 +168,36 @@ const getUserByIdRoute = {
   },
 };
 
-// Endpoint untuk memperbarui password
-const updatePasswordRoute = {
-  method: "PUT",
-  path: "/users/{id}/password",
+// Endpoint GET untuk Register
+const getRegisterRoute = {
+  method: "GET",
+  path: "/register",
   handler: async (request, h) => {
-    const { id } = request.params;
-    const { oldPassword, newPassword } = request.payload;
-    const token = request.headers.authorization?.split(" ")[1];
+    return h
+      .response({ message: "You can use POST /register to register a user." })
+      .code(200);
+  },
+};
 
-    try {
-      if (!token) {
-        return h.response({ message: "Authorization token is required" }).code(401);
-      }
+// Endpoint GET untuk Login
+const getLoginRoute = {
+  method: "GET",
+  path: "/login",
+  handler: async (request, h) => {
+    return h
+      .response({ message: "You can use POST /login to login." })
+      .code(200);
+  },
+};
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || "yourSecretKeyHere");
-      if (decoded.userId !== id) {
-        return h.response({ message: "Unauthorized" }).code(403);
-      }
-
-      const user = await User.findById(id);
-      if (!user) {
-        return h.response({ message: "User not found" }).code(404);
-      }
-
-      const isMatch = await bcrypt.compare(oldPassword, user.password);
-      if (!isMatch) {
-        return h.response({ message: "Old password is incorrect" }).code(400);
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      user.password = hashedPassword;
-      await user.save();
-
-      return h.response({ message: "Password updated successfully" }).code(200);
-    } catch (err) {
-      console.error("Error updating password:", err);
-      return h.response({ message: "Error updating password" }).code(500);
-    }
+// Endpoint GET untuk refresh token
+const getRefreshRoute = {
+  method: "GET",
+  path: "/refresh-token",
+  handler: async (request, h) => {
+    return h
+      .response({ message: "You can use POST /refresh-token to refresh your token." })
+      .code(200);
   },
 };
 
@@ -212,7 +207,9 @@ module.exports = {
   loginRoute,
   refreshRoute,
   verifyTokenRoute,
-  getAllUsersRoute,
-  getUserByIdRoute,
-  updatePasswordRoute, // Tambahan untuk update password
+  getAllUsersRoute,   // Endpoint untuk semua user
+  getUserByIdRoute,   // Endpoint untuk user berdasarkan ID
+  getRegisterRoute,
+  getLoginRoute,
+  getRefreshRoute,
 };
