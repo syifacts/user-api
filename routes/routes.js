@@ -200,6 +200,50 @@ const getRefreshRoute = {
       .code(200);
   },
 };
+// Endpoint PUT untuk mengubah password
+const changePasswordRoute = {
+  method: "PUT",
+  path: "/change-password",
+  handler: async (request, h) => {
+    const { oldPassword, newPassword } = request.payload;
+    const { authorization } = request.headers;
+
+    if (!authorization) {
+      return h.response({ message: "Authorization header is required" }).code(400);
+    }
+
+    try {
+      // Mendekode token dari header Authorization
+      const token = authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "yourSecretKeyHere");
+
+      // Mencari user berdasarkan ID
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return h.response({ message: "User not found" }).code(404);
+      }
+
+      // Memeriksa kecocokan password lama dengan yang ada di database
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return h.response({ message: "Old password is incorrect" }).code(400);
+      }
+
+      // Meng-hash password baru
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Memperbarui password pengguna
+      user.password = hashedPassword;
+      await user.save();
+
+      return h.response({ message: "Password updated successfully" }).code(200);
+    } catch (err) {
+      console.error("Error updating password:", err);
+      return h.response({ message: "Error updating password" }).code(500);
+    }
+  },
+};
+
 
 // Export semua routes
 module.exports = {
@@ -212,4 +256,5 @@ module.exports = {
   getRegisterRoute,
   getLoginRoute,
   getRefreshRoute,
+  changePasswordRoute,
 };

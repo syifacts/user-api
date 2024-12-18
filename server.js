@@ -10,7 +10,11 @@ const {
   getRefreshRoute,
   getAllUsersRoute, // Menambahkan route untuk semua pengguna
   getUserByIdRoute,  // Menambahkan route untuk mendapatkan pengguna berdasarkan ID
+  refreshRoute,
+  changePasswordRoute,
 } = require('./routes/routes');
+
+
 
 // Fungsi untuk menghubungkan ke MongoDB
 const startMongoDB = async () => {
@@ -75,6 +79,8 @@ const init = async () => {
     server.route(verifyTokenRoute);
     server.route(getAllUsersRoute);  // Menambahkan route untuk semua pengguna
     server.route(getUserByIdRoute);  // Menambahkan route untuk pengguna berdasarkan ID
+    server.route(refreshRoute);
+    server.route(changePasswordRoute);
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
